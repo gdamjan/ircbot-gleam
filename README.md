@@ -11,3 +11,10 @@ over a WebSocket.
 gleam build
 gleam run
 ```
+> [!NOTE]
+> Configuration currently is 3 environment variables:
+> - `IRC_USERNAME`
+> - `IRC_PASSWORD`
+> - `IRC_WEBSOCKET_URL`
+>
+> TBD: what the actual config will be in the future
