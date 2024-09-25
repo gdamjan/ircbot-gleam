@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "25"
+          gleam-version: "1.4"
+
+      - run: gleam format --check src test
+      - run: gleam deps download
+      - run: gleam test
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: erlang-shipment
+          path: build/erlang-shipment/
