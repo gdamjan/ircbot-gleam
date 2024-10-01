@@ -1,0 +1,45 @@
+name: Make a release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_ARTIFACT: release-${{ github.ref_name }}.tar.gz
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "26"
+          gleam-version: "1.5"
+          rebar3-version: "3"
+
+      - name: Create artifact
+        run: |
+          gleam export erlang-shipment
+          tar -C build/erlang-shipment/ -caf $RELEASE_ARTIFACT .
+
+      - uses: sigstore/cosign-installer@v3
+      - name: Sign artifact
+        run: |
+          cosign sign-blob --yes \
+            --output-signature ${RELEASE_ARTIFACT}.sig \
+            --output-certificate ${RELEASE_ARTIFACT}.cert \
+            ${RELEASE_ARTIFACT}
+
+      - name: Upload artifacts to github-releases
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.RELEASE_ARTIFACT }}*
+          file_glob: true
+          tag: ${{ github.ref }}
