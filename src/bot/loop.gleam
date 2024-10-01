@@ -5,8 +5,8 @@ import gleam/int
 import gleam/io
 import gleam/string
 import gleam_gun/websocket.{Binary, Close, Text}
-import irc/parsers.{parse_irc_msg}
-import irc/types.{IRCResponse, NoTail, Tail} as _
+
+import irc/parsers.{Message, parse_message}
 import plugins/types.{type Plugin, type Plugins} as _
 
 const recv_timeout_ms = 60_000
@@ -25,8 +25,10 @@ fn loop(conn, plugins: Plugins, last_activity: Int) -> Nil {
   case resp {
     Ok(Text(t)) -> {
       io.println(t)
-      let msg = parse_irc_msg(t)
-      handle_msg(conn, plugins, msg)
+      case parse_message(t) {
+        Ok(msg) -> handle_msg(conn, plugins, msg)
+        Error(e) -> io.print_error("Error: " <> e)
+      }
       loop(conn, plugins, now)
     }
 
@@ -66,22 +68,22 @@ fn loop(conn, plugins: Plugins, last_activity: Int) -> Nil {
 fn handle_msg(conn, plugins, msg) {
   case msg {
     // respond to pings immediately
-    IRCResponse(["PING", token], ..) -> {
+    Message(command: "PING", params: [token], ..) -> {
       io.println("Sending: PONG " <> token)
       websocket.send(conn, "PONG " <> token)
     }
 
-    IRCResponse(["PRIVMSG", ..], ..) -> handle_privmsg(conn, plugins, msg)
+    Message(command: "PRIVMSG", ..) -> handle_privmsg(conn, plugins, msg)
 
     // ignore NOTICE and all other IRC commands for now
-    IRCResponse(["NOTICE", ..], ..) -> Nil
+    Message(command: "NOTICE", ..) -> Nil
     _ -> Nil
   }
 }
 
 fn handle_privmsg(conn, plugins, msg) {
-  let assert IRCResponse(["PRIVMSG", channel, ..], _tail, ..) = msg
-  let text = privmsg_full_text(msg)
+  let assert Message(command: "PRIVMSG", params: [channel, ..rest], ..) = msg
+  let text = string.join(rest, " ")
 
   // anon function to respond to the same channel from where the request came
   let responder = fn(s: String) -> Nil {
@@ -99,15 +101,4 @@ fn handle_privmsg(conn, plugins, msg) {
       False -> Nil
     }
   })
-}
-
-// the full text of a PRIVMSG can be anything after the channel and the full tail
-// if they exist
-fn privmsg_full_text(msg) -> String {
-  let assert IRCResponse(["PRIVMSG", _channel, ..cmdrest], tail, ..) = msg
-  case cmdrest, tail {
-    _, NoTail -> string.join(cmdrest, " ")
-    [], Tail(s) -> s
-    [_, ..], Tail(s) -> string.join(cmdrest, " ") <> " " <> s
-  }
 }
