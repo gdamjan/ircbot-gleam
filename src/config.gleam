@@ -7,6 +7,9 @@ import gleam/result
 import gleam/uri
 import gleam_gun/websocket
 
+// TODO: Config type
+// pub type Config { todo }
+
 /// Configuration is provided as just 3 environment variables
 /// · IRC_USERNAME - username to login to soju
 /// · IRC_PASSWORD - password to login to soju
@@ -14,7 +17,7 @@ import gleam_gun/websocket
 pub fn get() {
   let trace =
     os.get_env("IRC_WEBSOCKET_TRACE")
-    |> result.map(list.contains(["Y", "True", "true", "1"], _))
+    |> result.map(fn(val) { list.contains(["Y", "True", "true", "1"], val) })
     |> result.unwrap(False)
     |> websocket.Trace
 

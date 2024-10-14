@@ -6,7 +6,7 @@ import gleam/io
 import gleam/string
 import gleam_gun/websocket.{Binary, Close, Text}
 
-import irc/parsers.{Message, parse_message}
+import irc/message.{type Message, Message}
 import plugins/types.{type Plugin, type Plugins} as _
 
 const recv_timeout_ms = 60_000
@@ -25,15 +25,18 @@ fn loop(conn, plugins: Plugins, last_activity: Int) -> Nil {
   case resp {
     Ok(Text(t)) -> {
       io.println(t)
-      case parse_message(t) {
-        Ok(msg) -> handle_msg(conn, plugins, msg)
-        Error(e) -> io.print_error("Error: " <> e)
+
+      case message.parse(t) {
+        Ok(msg) -> {
+          handle_msg(conn, plugins, msg)
+        }
+        Error(e) -> io.println_error("Error: " <> e)
       }
       loop(conn, plugins, now)
     }
 
     Ok(Close) -> {
-      io.print("connection closed")
+      io.println("connection closed")
       websocket.close(conn)
     }
 
@@ -45,7 +48,7 @@ fn loop(conn, plugins: Plugins, last_activity: Int) -> Nil {
 
     // timeout: no data received for a long time, connection is dead but TCP did not learn that
     Error(Nil) if no_activity_for > max_activity_timeout_ms -> {
-      io.print(
+      io.println(
         "Closing socket: no activity for "
         <> no_activity_for / 1000 |> int.to_string
         <> "."
@@ -75,8 +78,9 @@ fn handle_msg(conn, plugins, msg) {
 
     Message(command: "PRIVMSG", ..) -> handle_privmsg(conn, plugins, msg)
 
-    // ignore NOTICE and all other IRC commands for now
+    // NOTICE - don't react on them
     Message(command: "NOTICE", ..) -> Nil
+    // ignore all other IRC commands for now
     _ -> Nil
   }
 }
@@ -95,7 +99,7 @@ fn handle_privmsg(conn, plugins, msg) {
   |> dict.each(fn(keyword, call_plugin: Plugin) {
     case keyword == text {
       True -> {
-        process.start(fn() { call_plugin(responder) }, False)
+        process.start(fn() { call_plugin(msg, responder) }, False)
         Nil
       }
       False -> Nil
