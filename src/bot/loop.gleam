@@ -9,6 +9,7 @@ import bot/utils
 import connection/socket
 import connection/ssl
 import irc/message.{type Message, Message}
+import plugins/couchdb
 import plugins/types.{type Plugin, type Plugins} as _
 
 const recv_timeout_ms = 60_000
@@ -17,10 +18,11 @@ const max_activity_timeout_ms = 200_000
 
 pub fn main_loop(sock, plugins: Plugins) -> Nil {
   let now = erlang.system_time(erlang.Millisecond)
-  loop(sock, plugins, now)
+  let logger = couchdb.init(Nil)
+  loop(sock, plugins, logger, now)
 }
 
-fn loop(sock, plugins: Plugins, last_activity: Int) -> Nil {
+fn loop(sock, plugins: Plugins, logger, last_activity: Int) -> Nil {
   let line = utils.receive(sock, recv_timeout_ms)
   let now = erlang.system_time(erlang.Millisecond)
   let no_activity_for = now - last_activity
@@ -28,11 +30,12 @@ fn loop(sock, plugins: Plugins, last_activity: Int) -> Nil {
     Ok(line) -> {
       case message.parse(line) {
         Ok(msg) -> {
+          logger(msg)
           handle_msg(sock, plugins, msg)
         }
         Error(e) -> io.println_error("Error parsing irc line: " <> e)
       }
-      loop(sock, plugins, now)
+      loop(sock, plugins, logger, now)
     }
 
     // timeout: no data received for a long time, connection is dead but TCP did not learn that
@@ -53,7 +56,7 @@ fn loop(sock, plugins: Plugins, last_activity: Int) -> Nil {
       let token = "t-" <> now |> int.to_string
       io.println("Sending: PING " <> token)
       utils.send(sock, "PING " <> token)
-      loop(sock, plugins, last_activity)
+      loop(sock, plugins, logger, last_activity)
     }
 
     Error(socket.Closed) -> {

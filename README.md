@@ -6,6 +6,7 @@ The bot is designed to connect to a [`soju`](https://soju.im) bouncer instance
 over a SSL Socket. Other scenarios not tested.
 
 Does stuff (currently):
+- log to a couchdb database (set by the `COUCHDB_URL` environment variable)
 - respond to `!uptime` commands
 
 ## Quick start
