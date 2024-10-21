@@ -9,8 +9,6 @@ target = "erlang" # Erlang/OTP >= 27
 [dependencies]
 gleam_stdlib = ">= 0.40.0 and < 1.0.0"
 gleam_erlang = ">= 0.26.0 and < 1.0.0"
-gleam_gun = { path = "vendor/gleam_gun" }
-certifi = ">= 2.13.0 and < 3.0.0"
 gleam_http = ">= 3.7.0 and < 4.0.0"
 
 [dev-dependencies]
