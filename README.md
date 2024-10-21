@@ -1,4 +1,4 @@
-# ircbot
+# Gleam ircbot <img src="https://github.com/user-attachments/assets/3e16bb16-d8b4-405d-9df1-ef6161bb04a8" width="32px" height="32px">
 
 As simple as 1-2-3: Connects to irc, joins channels, does stuff.
 
