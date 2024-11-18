@@ -1,5 +1,5 @@
 import gleam/int.{to_string}
-import gleam/string.{pad_left}
+import gleam/string.{pad_start}
 
 import plugins/types.{type Plugin, type Responder}
 
@@ -18,9 +18,9 @@ fn uptime(_msg, reply: Responder) -> Nil {
     <> " days, "
     <> hours |> to_string
     <> " hours, "
-    <> minutes |> to_string |> pad_left(2, "0")
+    <> minutes |> to_string |> pad_start(2, "0")
     <> " minutes, "
-    <> seconds |> to_string |> pad_left(2, "0")
+    <> seconds |> to_string |> pad_start(2, "0")
     <> " seconds.",
   )
   Nil

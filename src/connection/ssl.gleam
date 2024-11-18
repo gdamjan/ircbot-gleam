@@ -1,4 +1,4 @@
-import gleam/bytes_builder.{type BytesBuilder}
+import gleam/bytes_tree.{type BytesTree}
 import gleam/erlang/charlist.{type Charlist}
 
 import connection/socket.{
@@ -19,7 +19,7 @@ pub fn shutdown(socket: Socket, how: Shutdown) -> Result(Nil, SocketReason)
 @external(erlang, "connection_ffi", "ssl_send")
 pub fn send_bytes(
   socket: Socket,
-  packet: BytesBuilder,
+  packet: BytesTree,
 ) -> Result(Nil, SocketReason)
 
 @external(erlang, "ssl", "recv")

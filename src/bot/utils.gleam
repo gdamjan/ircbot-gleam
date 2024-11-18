@@ -1,5 +1,5 @@
 import gleam/bit_array
-import gleam/bytes_builder
+import gleam/bytes_tree
 import gleam/erlang/charlist
 import gleam/io
 import gleam/list
@@ -15,8 +15,8 @@ import connection/ssl
 pub fn send(socket: Socket, data: String) -> Nil {
   let crlf = bit_array.from_string("\r\n")
   let bytes =
-    bytes_builder.from_string(data)
-    |> bytes_builder.append(crlf)
+    bytes_tree.from_string(data)
+    |> bytes_tree.append(crlf)
   let _ = ssl.send_bytes(socket, bytes)
   Nil
 }
