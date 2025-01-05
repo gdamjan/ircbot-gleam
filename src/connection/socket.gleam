@@ -59,7 +59,10 @@ pub type Options {
 }
 
 pub const default_options = [
-  Mode(Binary), SendTimeout(30_000), SendTimeoutClose(True), Reuseaddr(True),
+  Mode(Binary),
+  SendTimeout(30_000),
+  SendTimeoutClose(True),
+  Reuseaddr(True),
   Nodelay(True),
 ]
 

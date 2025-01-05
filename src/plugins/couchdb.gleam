@@ -1,7 +1,7 @@
 import birl
+import envoy
 import gleam/bit_array.{base64_encode}
 import gleam/dict
-import gleam/erlang/os
 import gleam/http
 import gleam/http/request
 import gleam/httpc
@@ -19,11 +19,13 @@ import irc/prefix
 import irc/tags.{NoTagValue, TagValue}
 import plugins/types.{type LogPlugin} as _
 
+const default_local_couch = "http://irclog:irclog@localhost:5984/irclog"
+
 // TODO: take config as input
 pub fn init(_config) -> LogPlugin {
   let uri_s =
-    os.get_env("COUCHDB_URL")
-    |> result.unwrap("http://irclog:irclog@localhost:5984/irclog")
+    envoy.get("COUCHDB_URL")
+    |> result.unwrap(default_local_couch)
 
   let assert Ok(uri) = uri.parse(uri_s)
   let assert Ok(base_req) = request.from_uri(uri)

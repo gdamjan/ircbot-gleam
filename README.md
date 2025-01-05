@@ -16,7 +16,7 @@ gleam build
 gleam run
 ```
 > [!NOTE]
-> Configuration currently is 3 environment variables:
+> Configuration currently is 4 environment variables:
 > - `IRC_USERNAME`
 > - `IRC_PASSWORD`
 > - `IRC_HOST`
