@@ -29,7 +29,8 @@ jobs:
           tar -C build/erlang-shipment/ -caf $RELEASE_ARTIFACT .
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v2
+        id: attest
         with:
           subject-path: ${{ env.RELEASE_ARTIFACT }}
 
@@ -40,3 +41,4 @@ jobs:
           file: ${{ env.RELEASE_ARTIFACT }}*
           file_glob: true
           tag: ${{ github.ref }}
+          body: ${{ steps.attest.outputs.attestation-url }}
