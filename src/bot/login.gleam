@@ -2,7 +2,7 @@ import gleam/bit_array
 import gleam/string
 
 import bot/utils
-import irc/message.{type Message, Message}
+import irc/message.{Message}
 
 // some other possible capabilities:
 // https://ircv3.net/specs/extensions/chathistory //

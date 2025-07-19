@@ -8,7 +8,7 @@ import gleam/string
 import bot/utils
 import connection/socket
 import connection/ssl
-import irc/message.{type Message, Message}
+import irc/message.{Message}
 import plugins/couchdb
 import plugins/types.{type Plugin, type Plugins} as _
 
