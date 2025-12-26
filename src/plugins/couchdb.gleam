@@ -1,4 +1,3 @@
-import birl
 import envoy
 import gleam/bit_array.{base64_encode}
 import gleam/dict
@@ -12,6 +11,7 @@ import gleam/option.{type Option, None, Some}
 import gleam/pair
 import gleam/result
 import gleam/string
+import gleam/time/timestamp
 import gleam/uri
 
 import irc/message.{type Message}
@@ -88,7 +88,7 @@ fn msg2json(msg: Message) -> Option(String) {
 
   let timestamp =
     get_time_or_now(msg.tags)
-    |> time_to_float_micros
+    |> timestamp.to_unix_seconds
 
   case msg.command {
     "PRIVMSG" | "NOTICE" -> {
@@ -117,23 +117,15 @@ fn msg2json(msg: Message) -> Option(String) {
   }
 }
 
-/// Tries to parse the irc tag time
+/// Tries to parse the irc tag time: @time=2025-12-27T10:00:00Z
 /// if it doesn't exist, or fails to parse returns current time
-fn get_time_or_now(tags) -> birl.Time {
+fn get_time_or_now(tags) -> timestamp.Timestamp {
   case dict.get(tags, "time") {
-    Error(Nil) -> birl.now()
-    Ok(NoTagValue) -> birl.now()
+    Error(Nil) -> timestamp.system_time()
+    Ok(NoTagValue) -> timestamp.system_time()
     Ok(TagValue(time_tag_value)) -> {
-      birl.parse(time_tag_value)
-      |> result.lazy_unwrap(birl.now)
+      timestamp.parse_rfc3339(time_tag_value)
+      |> result.lazy_unwrap(timestamp.system_time)
     }
   }
-}
-
-fn time_to_float_micros(t) -> Float {
-  {
-    birl.to_unix_micro(t)
-    |> int.to_float
-  }
-  /. 1_000_000.0
 }

@@ -1,9 +1,11 @@
 import gleam/dict
-import gleam/erlang
 import gleam/erlang/process
-import gleam/int
 import gleam/io
+import gleam/order
 import gleam/string
+import gleam/time/calendar
+import gleam/time/duration
+import gleam/time/timestamp
 
 import bot/utils
 import connection/socket
@@ -17,15 +19,25 @@ const recv_timeout_ms = 60_000
 const max_activity_timeout_ms = 200_000
 
 pub fn main_loop(sock, plugins: Plugins) -> Nil {
-  let now = erlang.system_time(erlang.Millisecond)
+  let now = timestamp.system_time()
   let logger = couchdb.init(Nil)
   loop(sock, plugins, logger, now)
 }
 
-fn loop(sock, plugins: Plugins, logger, last_activity: Int) -> Nil {
+fn loop(
+  sock,
+  plugins: Plugins,
+  logger,
+  last_activity: timestamp.Timestamp,
+) -> Nil {
   let line = utils.receive(sock, recv_timeout_ms)
-  let now = erlang.system_time(erlang.Millisecond)
-  let no_activity_for = now - last_activity
+
+  let now = timestamp.system_time()
+  let no_activity_for = timestamp.difference(now, last_activity)
+  let max_activity_timeout_ms = duration.milliseconds(max_activity_timeout_ms)
+  let send_keepalive =
+    duration.compare(no_activity_for, max_activity_timeout_ms) == order.Lt
+
   case line {
     Ok(line) -> {
       case message.parse(line) {
@@ -38,25 +50,22 @@ fn loop(sock, plugins: Plugins, logger, last_activity: Int) -> Nil {
       loop(sock, plugins, logger, now)
     }
 
-    // timeout: no data received for a long time, connection is dead but TCP did not learn that
-    Error(socket.Timeout) if no_activity_for > max_activity_timeout_ms -> {
-      io.println(
-        "Closing socket: no activity for "
-        <> no_activity_for / 1000 |> int.to_string
-        <> "."
-        <> no_activity_for % 1000 |> int.to_string
-        <> "s.",
-      )
-      let _ = ssl.shutdown(sock, socket.ReadWrite)
-      Nil
-    }
-
     // timeout: no data received, let's make some activity on the connection
-    Error(socket.Timeout) -> {
-      let token = "t-" <> now |> int.to_string
+    Error(socket.Timeout) if send_keepalive -> {
+      let token = "t-" <> now |> timestamp.to_rfc3339(calendar.utc_offset)
       io.println("Sending: PING " <> token)
       utils.send(sock, "PING " <> token)
       loop(sock, plugins, logger, last_activity)
+    }
+
+    // timeout: no data received for a long time, connection is dead but TCP did not learn that
+    Error(socket.Timeout) -> {
+      io.println(
+        "Closing socket: no activity for "
+        <> no_activity_for |> duration.to_iso8601_string,
+      )
+      let _ = ssl.shutdown(sock, socket.ReadWrite)
+      Nil
     }
 
     Error(socket.Closed) -> {
@@ -104,7 +113,7 @@ fn handle_privmsg(sock, plugins, msg) {
   |> dict.each(fn(keyword, call_plugin: Plugin) {
     case keyword == text {
       True -> {
-        process.start(fn() { call_plugin(msg, responder) }, False)
+        process.spawn_unlinked(fn() { call_plugin(msg, responder) })
         Nil
       }
       False -> Nil
