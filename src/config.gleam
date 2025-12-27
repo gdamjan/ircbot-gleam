@@ -31,7 +31,7 @@ pub fn get() -> Config {
 /// Read config item from systemd credentials
 fn read_cred(creds: Result(String, Nil), name: String) {
   creds
-  |> result.then(fn(dir) {
+  |> result.try(fn(dir) {
     simplifile.read(dir <> "/" <> name)
     |> result.replace_error(Nil)
   })
