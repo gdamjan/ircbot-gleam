@@ -81,9 +81,10 @@ pub fn log(base_req, msg: Message) {
 fn msg2json(msg: Message) -> Option(String) {
   use sender <- option.then(msg.prefix |> prefix.to_option)
 
-  let sender =
+  // strip sender to nickname (nick!ident@host -> nick, but ident and host are optional)
+  let nick =
     string.split_once(sender, "!")
-    |> result.map(pair.first)
+    |> result.map(with: pair.first)
     |> result.unwrap(or: sender)
 
   let timestamp =
@@ -95,7 +96,7 @@ fn msg2json(msg: Message) -> Option(String) {
       let assert ["#" <> channel, message, ..] = msg.params
       object([
         #("timestamp", float(timestamp)),
-        #("sender", string(sender)),
+        #("sender", string(nick)),
         #("channel", string(channel)),
         #("message", string(message)),
       ])
@@ -106,7 +107,7 @@ fn msg2json(msg: Message) -> Option(String) {
       let assert ["#" <> channel, topic, ..] = msg.params
       object([
         #("timestamp", float(timestamp)),
-        #("sender", string(sender)),
+        #("sender", string(nick)),
         #("channel", string(channel)),
         #("topic", string(topic)),
       ])
