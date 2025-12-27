@@ -42,7 +42,7 @@ fn read_cred(creds: Result(String, Nil), name: String) {
 fn get_env(cred_name) {
   let env_name =
     cred_name
-    |> string.capitalise()
+    |> string.uppercase()
     |> string.replace("-", "_")
   envoy.get(env_name)
 }

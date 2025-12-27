@@ -6,10 +6,37 @@ pub type Socket
 
 pub type SocketReason {
   Closed
-  NotOwner
-  Badarg
   Timeout
-  Posix(String)
+  Badarg
+  Terminated
+  Eaddrinuse
+  Eaddrnotavail
+  Eafnosupport
+  Ealready
+  Econnaborted
+  Econnrefused
+  Econnreset
+  Edestaddrreq
+  Ehostdown
+  Ehostunreach
+  Einprogress
+  Eisconn
+  Emsgsize
+  Enetdown
+  Enetunreach
+  Enopkg
+  Enoprotoopt
+  Enotconn
+  Enotty
+  Enotsock
+  Eproto
+  Eprotonosupport
+  Eprototype
+  Esocktnosupport
+  Etimedout
+  Ewouldblock
+  Exbadport
+  Exbadseq
 }
 
 pub type TcpOption =
@@ -66,33 +93,30 @@ pub const default_options = [
   Nodelay(True),
 ]
 
+@external(erlang, "gleam@function", "identity")
+fn from(value: a) -> Dynamic
+
 pub fn convert_options(options: List(Options)) -> List(TcpOption) {
-  let active = atom.create_from_string("active")
+  let active = atom.create("active")
   list.map(options, fn(opt) {
     case opt {
-      Receive(Count(count)) -> #(active, dynamic.from(count))
-      Receive(Once) -> #(active, dynamic.from(atom.create_from_string("once")))
-      Receive(Pull) -> #(active, dynamic.from(False))
-      Receive(All) -> #(active, dynamic.from(True))
-      Mode(Binary) -> #(atom.create_from_string("mode"), dynamic.from(Binary))
-      Mode(List) -> #(atom.create_from_string("mode"), dynamic.from(List))
-      Packet(pkt_t) -> packet_type(pkt_t)
-      Cacerts(data) -> #(atom.create_from_string("cacerts"), data)
-      Nodelay(bool) -> #(atom.create_from_string("nodelay"), dynamic.from(bool))
-      Reuseaddr(bool) -> #(
-        atom.create_from_string("reuseaddr"),
-        dynamic.from(bool),
-      )
-      SendTimeout(int) -> #(
-        atom.create_from_string("send_timeout"),
-        dynamic.from(int),
-      )
+      Receive(Count(count)) -> #(active, dynamic.int(count))
+      Receive(Once) -> #(active, from(atom.create("once")))
+      Receive(Pull) -> #(active, dynamic.bool(False))
+      Receive(All) -> #(active, dynamic.bool(True))
+      Mode(Binary) -> #(atom.create("mode"), from(Binary))
+      Mode(List) -> #(atom.create("mode"), from(List))
+      Packet(pkt_t) -> #(atom.create("packet"), packet_type(pkt_t))
+      Cacerts(data) -> #(atom.create("cacerts"), data)
+      Nodelay(bool) -> #(atom.create("nodelay"), dynamic.bool(bool))
+      Reuseaddr(bool) -> #(atom.create("reuseaddr"), dynamic.bool(bool))
+      SendTimeout(int) -> #(atom.create("send_timeout"), dynamic.int(int))
       SendTimeoutClose(bool) -> #(
-        atom.create_from_string("send_timeout_close"),
-        dynamic.from(bool),
+        atom.create("send_timeout_close"),
+        dynamic.bool(bool),
       )
       CustomizeHostnameCheck(funcs) -> #(
-        atom.create_from_string("customize_hostname_check"),
+        atom.create("customize_hostname_check"),
         funcs,
       )
     }
@@ -100,26 +124,19 @@ pub fn convert_options(options: List(Options)) -> List(TcpOption) {
 }
 
 fn packet_type(pkt_t: PacketType) {
-  let pkt_opt = case pkt_t {
-    Zero -> dynamic.from(0)
-    One -> dynamic.from(1)
-    Two -> dynamic.from(2)
-    Four -> dynamic.from(4)
-    t -> dynamic.from(t)
+  case pkt_t {
+    Zero -> dynamic.int(0)
+    One -> dynamic.int(1)
+    Two -> dynamic.int(2)
+    Four -> dynamic.int(4)
+    t -> from(t)
   }
-  let packet = atom.create_from_string("packet")
-  #(packet, pkt_opt)
 }
 
 pub type Shutdown {
   Read
   Write
   ReadWrite
-}
-
-pub type SocketMessage {
-  Data(BitArray)
-  Err(SocketReason)
 }
 
 @external(erlang, "public_key", "cacerts_get")
