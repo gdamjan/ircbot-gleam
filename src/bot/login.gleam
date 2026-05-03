@@ -38,6 +38,7 @@ pub fn login(sock, username, password) {
   let assert Ok(auth_ok) = utils.receive(sock, 1000)
   let assert Ok(Message(command: "903", params: ["*", _msg], ..)) =
     message.parse(auth_ok)
+    as "Expected RPL_SASLSUCCESS response."
 
   // https://codeberg.org/emersion/soju/src/branch/master/doc/ext/bouncer-networks.md
   utils.send(sock, "BOUNCER BIND " <> netid)
