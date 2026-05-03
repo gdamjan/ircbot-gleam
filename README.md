@@ -13,6 +13,7 @@ Does stuff (currently):
 
 ```
 gleam build
+set -a ; source .env; set +a;
 gleam run
 ```
 > [!NOTE]
